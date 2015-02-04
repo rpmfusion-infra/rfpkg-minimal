@@ -1,0 +1,10 @@
+#!/bin/bash
+
+baseurl=http://pkgs.fedoraproject.org/repo/pkgs
+pkgname=$(pwd| sed -e 's|^/.*/||g')
+cat sources | while read line; do
+    tarball=$(echo  $line| sed -e 's|.* ||g')
+    md5sum=$(echo $line| sed -e 's| .*||g')
+    wget $baseurl/$pkgname/$tarball/$md5sum/$tarball
+done
+
