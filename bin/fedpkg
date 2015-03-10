@@ -20,6 +20,9 @@ set -e
 
 baseurl=http://pkgs.fedoraproject.org/repo/pkgs
 pkgname=$(basename $PWD)
-while read md5sum tarball; do
-    curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$pkgname/$tarball/$md5sum/$tarball
-done < sources
+if [[ -s sources ]]; then
+    while read md5sum tarball; do
+        curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$pkgname/$tarball/$md5sum/$tarball
+    done < sources
+    md5sum -c sources
+fi
