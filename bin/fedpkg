@@ -22,4 +22,3 @@ pkgname=$(basename $PWD)
 while read md5sum tarball; do
     curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$pkgname/$tarball/$md5sum/$tarball
 done < sources
-
