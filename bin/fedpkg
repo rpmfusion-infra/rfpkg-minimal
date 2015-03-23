@@ -18,10 +18,8 @@
 set -e
 
 baseurl=http://pkgs.fedoraproject.org/repo/pkgs
-pkgname=$(pwd| sed -e 's|^/.*/||g')
-cat sources | while read line; do
-    tarball=$(echo  $line| sed -e 's|.* ||g')
-    md5sum=$(echo $line| sed -e 's| .*||g')
+pkgname=$(basename $PWD)
+while read md5sum tarball; do
     curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$pkgname/$tarball/$md5sum/$tarball
-done
+done < sources
 
