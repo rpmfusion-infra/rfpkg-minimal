@@ -1,0 +1,57 @@
+#!/bin/bash
+#   Copyright (C) 2013  Red Hat, Inc.
+#   Copyright (C) 2015  Till Maas
+#   Copyright (C) 2016  Ben Rosser
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Abort on errors
+set -e
+
+baseurl=http://pkgs.rpmfusion.org/repo/pkgs
+pkgname=$(basename $PWD)
+
+# Determine if the package is in free or in nonfree.
+# If we fail for whatever reason (.git/config not present, remote info not
+# in that file) we'll attempt to download both.
+namespace=""
+if [[ -s .git/config ]]; then
+    remote_string=`grep pkgs.rpmfusion.org .git/config`
+    namespace="free"
+    if [[ $remote_string == *"nonfree"* ]]; then
+        namespace="nonfree"
+    elif [[ $remote_string == *"free"* ]]; then
+        namespace="free"
+    fi
+fi
+
+# Download sources.
+if [[ -s sources ]]; then
+    while read md5sum tarball; do
+        # Now, attempt download depending on the value of namespace.
+        # Unset = attempt to download from all namespaces, error if they all fail.
+        if [[ $namespace == "" ]]; then
+            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/free/$pkgname/$tarball/$md5sum/$tarball || true
+            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/nonfree/$pkgname/$tarball/$md5sum/$tarball || true
+            if [ ! -f ./$tarball ]; then
+                echo "Error: download of ${tarball} failed."
+                exit 1
+            fi
+        # If the namespace variable is set, use it to determine what to download.
+        else
+            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$md5sum/$tarball
+        fi
+    done < sources
+    md5sum -c sources
+fi
