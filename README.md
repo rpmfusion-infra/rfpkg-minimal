@@ -1,8 +1,8 @@
 # rfpkg-minimal
 
 A fork of [fedpkg-minimal](https://fedorahosted.org/fedpkg-minimal/)
-for RPM Fusion's buildsystem. rfpkg-minimal provides an ```rfpkg```
-script that only downloads a package's sources.
+for RPM Fusion's buildsystem. rfpkg-minimal provides a script that
+only downloads a package's sources.
 
 Note: rfpkg-minimal determines if a package is in free or in nonfree
 by reading ```./.git/config```. If this fails (because the git metadata
