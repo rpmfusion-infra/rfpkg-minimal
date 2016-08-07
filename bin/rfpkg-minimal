@@ -39,40 +39,40 @@ fi
 # Download sources.
 if [[ -s sources ]]; then
     while read md5sum tarball; do
+
+        # Pick the type of hash by looking at the length of the sum.
+        hashtype=""
+        sumlength=`echo -n $md5sum | wc -m`
+        case $sumlength in
+            32)  hashtype="md5" ;;
+            40)  hashtype="sha1" ;;
+            56)  hashtype="sha224" ;;
+            64)  hashtype="sha256" ;;
+            96)  hashtype="sha384" ;;
+            128) hashtype="sha512" ;;
+            *)   echo "Error: unrecognized hash function when downloading file ${tarball} with checksum ${md5sum}"
+                 exit 1 ;;
+            esac
+
         # Now, attempt download depending on the value of namespace.
         # Unset = attempt to download from all namespaces, error if they all fail.
         if [[ $namespace == "" ]]; then
-            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/free/$pkgname/$tarball/$md5sum/$tarball || true
-            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/nonfree/$pkgname/$tarball/$md5sum/$tarball || true
+            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/free/$pkgname/$tarball/$hashtype/$md5sum/$tarball || true
+            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/nonfree/$pkgname/$tarball/$hashtype/$md5sum/$tarball || true
             if [ ! -f ./$tarball ]; then
                 echo "Error: download of ${tarball} failed."
                 exit 1
             fi
         # If the namespace variable is set, use it to determine what to download.
         else
-            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$md5sum/$tarball
+            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$hashtype/$md5sum/$tarball
         fi
 
-        # We need to know the lengths of the checksum to determine *what* type of checksum it is.
-        sumlength=`echo -n $md5sum | wc -m`
-
-        # Use a different checksum depending on the length of the sum.
-        # Also check each line in the file individually in case files *don't* consistently
+        # Check each line in the file individually in case files *don't* consistently
         # use the same set of checksums.
-        if [[ $sumlength == 32 ]]; then
-            echo "${md5sum} ${tarball}" | md5sum -c
-        elif [[ $sumlength == 40 ]]; then
-            echo "${md5sum} ${tarball}" | sha1sum -c
-        elif [[ $sumlength == 56 ]]; then
-            echo "${md5sum} ${tarball}" | sha224sum -c
-        elif [[ $sumlength == 64 ]]; then
-            echo "${md5sum} ${tarball}" | sha256sum -c
-        elif [[ $sumlength == 96 ]]; then
-            echo "${md5sum} ${tarball}" | sha384sum -c
-        elif [[ $sumlength == 128 ]]; then
-            echo "${md5sum} ${tarball}" | sha512sum -c
-        fi
+        # Since each checksum program consists of the name of the checksum followed by
+        # the string 'sum', we can avoid reproducing the above table.
+        echo "${md5sum} ${tarball}" | ${hashtype}sum -c
 
     done < sources
-
 fi
