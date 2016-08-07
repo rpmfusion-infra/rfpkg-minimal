@@ -36,8 +36,6 @@ if [[ -s .git/config ]]; then
     fi
 fi
 
-sumlength=0
-
 # Download sources.
 if [[ -s sources ]]; then
     while read md5sum tarball; do
@@ -56,24 +54,25 @@ if [[ -s sources ]]; then
         fi
 
         # We need to know the lengths of the checksum to determine *what* type of checksum it is.
-        # Assuming for the moment each file uses the same set of checksums...
-        sumlength=`echo $md5sum | wc -m`
+        sumlength=`echo -n $md5sum | wc -m`
+
+        # Use a different checksum depending on the length of the sum.
+        # Also check each line in the file individually in case files *don't* consistently
+        # use the same set of checksums.
+        if [[ $sumlength == 32 ]]; then
+            echo "${md5sum} ${tarball}" | md5sum -c
+        elif [[ $sumlength == 40 ]]; then
+            echo "${md5sum} ${tarball}" | sha1sum -c
+        elif [[ $sumlength == 56 ]]; then
+            echo "${md5sum} ${tarball}" | sha224sum -c
+        elif [[ $sumlength == 64 ]]; then
+            echo "${md5sum} ${tarball}" | sha256sum -c
+        elif [[ $sumlength == 96 ]]; then
+            echo "${md5sum} ${tarball}" | sha384sum -c
+        elif [[ $sumlength == 128 ]]; then
+            echo "${md5sum} ${tarball}" | sha512sum -c
+        fi
 
     done < sources
-
-    # Use a different checksum depending on the length of the sum.
-    if [[ $sumlength == 33 ]]; then
-        md5sum -c sources
-    elif [[ $sumlength == 44 ]]; then
-        sha1sum -c sources
-    elif [[ $sumlength == 60 ]]; then
-        sha224sum -c sources
-    elif [[ $sumlength == 68 ]]; then
-        sha256sum -c sources
-    elif [[ $sumlength == 100 ]]; then
-        sha384sum -c sources
-    elif [[ $sumlength == 132 ]]; then
-        sha512sum -c sources
-    fi
 
 fi
