@@ -36,6 +36,8 @@ if [[ -s .git/config ]]; then
     fi
 fi
 
+sumlength=0
+
 # Download sources.
 if [[ -s sources ]]; then
     while read md5sum tarball; do
@@ -52,6 +54,26 @@ if [[ -s sources ]]; then
         else
             curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$md5sum/$tarball
         fi
+
+        # We need to know the lengths of the checksum to determine *what* type of checksum it is.
+        # Assuming for the moment each file uses the same set of checksums...
+        sumlength=`echo $md5sum | wc -m`
+
     done < sources
-    md5sum -c sources
+
+    # Use a different checksum depending on the length of the sum.
+    if [[ $sumlength == 33 ]]; then
+        md5sum -c sources
+    elif [[ $sumlength == 44 ]]; then
+        sha1sum -c sources
+    elif [[ $sumlength == 60 ]]; then
+        sha224sum -c sources
+    elif [[ $sumlength == 68 ]]; then
+        sha256sum -c sources
+    elif [[ $sumlength == 100 ]]; then
+        sha384sum -c sources
+    elif [[ $sumlength == 132 ]]; then
+        sha512sum -c sources
+    fi
+
 fi
