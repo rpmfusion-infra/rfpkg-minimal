@@ -56,16 +56,34 @@ if [[ -s sources ]]; then
 
         # Now, attempt download depending on the value of namespace.
         # Unset = attempt to download from all namespaces, error if they all fail.
+        # Note that the list of all namespaces here needs to be updated if/when new namespaces are added.
         if [[ $namespace == "" ]]; then
             curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/free/$pkgname/$tarball/$hashtype/$md5sum/$tarball || true
             curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/nonfree/$pkgname/$tarball/$hashtype/$md5sum/$tarball || true
-            if [ ! -f ./$tarball ]; then
-                echo "Error: download of ${tarball} failed."
-                exit 1
+
+            # Unfortunately we *also* need to try and download wihout $hashtype, if the hash is MD5
+            # This is support for legacy entries in the lookaside cache
+            # Only do this if we failed to download already.
+            if [[ $hashtype == "md5" ]] && [ ! -f ./$tarball ]; then
+                curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/free/$pkgname/$tarball/$md5sum/$tarball || true
+                curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/nonfree/$pkgname/$tarball/$md5sum/$tarball || true
             fi
         # If the namespace variable is set, use it to determine what to download.
         else
-            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$hashtype/$md5sum/$tarball
+            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$hashtype/$md5sum/$tarball || true
+
+            # Unfortunately we *also* need to try and download wihout $hashtype, if the hash is MD5
+            # This is support for legacy entries in the lookaside cache
+            # Only do this if we failed to download already.
+            if [[ $hashtype == "md5" ]] && [ ! -f ./$tarball ]; then
+                curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$md5sum/$tarball || true
+            fi
+        fi
+
+        # Complain if the download failed (i.e. file not present) and exit.
+        if [ ! -f ./$tarball ]; then
+            echo "Error: download of ${tarball} failed."
+            exit 1
         fi
 
         # Check each line in the file individually in case files *don't* consistently
