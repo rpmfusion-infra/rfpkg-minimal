@@ -90,7 +90,7 @@ if [[ -s sources ]]; then
         # use the same set of checksums.
         # Since each checksum program consists of the name of the checksum followed by
         # the string 'sum', we can avoid reproducing the above table.
-        echo "${md5sum} ${tarball}" | ${hashtype}sum -c
+        echo "${md5sum}  ${tarball}" | ${hashtype}sum -c
 
     done < sources
 fi
