@@ -19,21 +19,26 @@
 # Abort on errors
 set -e
 
-baseurl=http://pkgs.rpmfusion.org/repo/pkgs
+baseurl=pkgs.rpmfusion.org
 pkgname=$(basename $PWD)
 
 # Determine if the package is in free or in nonfree.
 # If we fail for whatever reason (.git/config not present, remote info not
-# in that file) we'll attempt to download both.
-namespace=""
+# in that file), default to free namespace. XXX: is there a smarter way?
+rooturl=$baseurl/free/$pkgname
 if [[ -s .git/config ]]; then
-    remote_string=`grep pkgs.rpmfusion.org .git/config`
-    namespace="free"
-    if [[ $remote_string == *"nonfree"* ]]; then
-        namespace="nonfree"
-    elif [[ $remote_string == *"free"* ]]; then
-        namespace="free"
+    # Use grep and cut to read the right URL out of .git/config.
+    giturl=`grep ${baseurl} .git/config`
+    if [[ ${giturl} == *@* ]]; then
+        giturl=https://`echo ${giturl} | cut -f2 -d"@"`
+    else
+        # Support anonymous (HTTP) checkouts properly.
+        giturl=`echo ${giturl} | cut -f3 -d" "`
+        giturl=`echo ${giturl} | sed "s,git/,,g"`
     fi
+
+    # Then, insert the "repo/pkgs" string between pkgs.rpmfusion.org and the namespace
+    rooturl=`echo ${giturl} | sed "s,org,org/repo/pkgs,g"`
 fi
 
 # Download sources.
@@ -55,29 +60,15 @@ if [[ -s sources ]]; then
             esac
 
         # Now, attempt download depending on the value of namespace.
-        # Unset = attempt to download from all namespaces, error if they all fail.
-        # Note that the list of all namespaces here needs to be updated if/when new namespaces are added.
-        if [[ $namespace == "" ]]; then
-            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/free/$pkgname/$tarball/$hashtype/$md5sum/$tarball || true
-            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/nonfree/$pkgname/$tarball/$hashtype/$md5sum/$tarball || true
+        # We extracted the URL containing the namespace value from .git/config
+        # automatically. If that failed, rfpkg-minimal will default to "free".
+        curl -H Pragma: -o ./$tarball -R -S --fail ${rooturl}/$tarball/$hashtype/$md5sum/$tarball || true
 
-            # Unfortunately we *also* need to try and download wihout $hashtype, if the hash is MD5
-            # This is support for legacy entries in the lookaside cache
-            # Only do this if we failed to download already.
-            if [[ $hashtype == "md5" ]] && [ ! -f ./$tarball ]; then
-                curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/free/$pkgname/$tarball/$md5sum/$tarball || true
-                curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/nonfree/$pkgname/$tarball/$md5sum/$tarball || true
-            fi
-        # If the namespace variable is set, use it to determine what to download.
-        else
-            curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$hashtype/$md5sum/$tarball || true
-
-            # Unfortunately we *also* need to try and download wihout $hashtype, if the hash is MD5
-            # This is support for legacy entries in the lookaside cache
-            # Only do this if we failed to download already.
-            if [[ $hashtype == "md5" ]] && [ ! -f ./$tarball ]; then
-                curl -H Pragma: -o ./$tarball -R -S --fail $baseurl/$namespace/$pkgname/$tarball/$md5sum/$tarball || true
-            fi
+        # Unfortunately we *also* need to try and download wihout $hashtype, if the hash is MD5
+        # This is support for legacy entries in the lookaside cache
+        # Only do this if we failed to download already.
+        if [[ $hashtype == "md5" ]] && [ ! -f ./$tarball ]; then
+            curl -H Pragma: -o ./$tarball -R -S --fail ${rooturl}/$tarball/$md5sum/$tarball || true
         fi
 
         # Complain if the download failed (i.e. file not present) and exit.
