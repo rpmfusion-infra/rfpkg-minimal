@@ -6,8 +6,7 @@ only downloads a package's sources.
 
 Note: rfpkg-minimal determines if a package is in free or in nonfree
 by reading ```./.git/config```. If this fails (because the git metadata
-is missing), rfpkg-minimal will attempt to download a package's sources
-from both the free/ and nonfree/ namespaces, ignoring whichever fails.
+is missing), rfpkg-minimal will default to the free namespace.
 
 ## License
 
