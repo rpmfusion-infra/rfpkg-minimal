@@ -38,7 +38,7 @@ if [[ -s .git/config ]]; then
     fi
 
     # Then, insert the "repo/pkgs" string between pkgs.rpmfusion.org and the namespace
-    rooturl=`echo ${giturl} | sed "s,org,org/repo/pkgs,g"`
+    rooturl=`echo ${giturl} | sed "s,${baseurl},${baseurl}/repo/pkgs,"`
 fi
 
 # Download sources.
