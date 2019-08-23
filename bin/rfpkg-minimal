@@ -21,6 +21,7 @@
 set -e
 
 #url=$(git remote get-url origin)
-url=$(git remote -v |grep origin | head -1 | awk '{print $2}')
+#url=$(git remote -v |grep origin | head -1 | awk '{print $2}')
+url=$(cat .git/config |awk '/url/ {print $3}')
 namespace=$(echo ${url} | awk -F '/' '{print $(NF-1)}')
 baseurl=https://pkgs.rpmfusion.org/repo/pkgs/${namespace} fedpkg-base $@
