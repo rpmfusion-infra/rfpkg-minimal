@@ -1,0 +1,46 @@
+#!/bin/bash
+#   Copyright (C) 2013  Red Hat, Inc.
+#   Copyright (C) 2015  Till Maas
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Abort on errors
+set -e
+
+pkgname=$(basename "$PWD")
+if [[ -s sources ]]; then
+    # Read first word of first line. For old MD5 format it's the 32 character
+    # hash. Otherwise let's assume the sources have the BSD format where lines
+    # start with hash type.
+    hashtype="$(head -n1 sources | cut -d' ' -f1 | tr '[:upper:]' '[:lower:]')"
+    if [ "${#hashtype}" -ne 32 ]; then
+        # The format is
+        #   SHA512 (filename) = ABCDEF
+        # We don't care about the equals sign. We also assume all hashes are
+        # the same type, so we don't need to read it again for each line.
+        while read -r _ filename _ hash; do
+            # Remove parenthesis around tarball name
+	    filename=${filename#(}
+	    tarball=${filename%)}
+            curl -L -H Pragma: -o "./$tarball" -R -S --fail --retry 5 --max-time 900 "$baseurl/$pkgname/$tarball/$hashtype/$hash/$tarball"
+        done < sources
+        "${hashtype}sum" -c sources
+    else
+        # Ok, we're working with MD5.
+        while read -r md5sum tarball; do
+            curl -L -H Pragma: -o "./$tarball" -R -S --fail --retry 5 --max-time 900 "$baseurl/$pkgname/$tarball/$md5sum/$tarball"
+        done < sources
+        md5sum -c sources
+    fi
+fi
