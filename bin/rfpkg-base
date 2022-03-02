@@ -30,15 +30,21 @@ if [[ -s sources ]]; then
         # We don't care about the equals sign. We also assume all hashes are
         # the same type, so we don't need to read it again for each line.
         while read -r _ filename _ hash; do
+            if [ -z "$filename" ] || [ -z "$hash" ]; then
+                continue
+            fi
             # Remove parenthesis around tarball name
-	    filename=${filename#(}
-	    tarball=${filename%)}
+            filename=${filename#(}
+            tarball=${filename%)}
             curl -L -H Pragma: -o "./$tarball" -R -S --fail --retry 5 --max-time 900 "$baseurl/$pkgname/$tarball/$hashtype/$hash/$tarball"
         done < sources
         "${hashtype}sum" -c sources
     else
         # Ok, we're working with MD5.
         while read -r md5sum tarball; do
+            if [ -z "$md5sum" ] || [ -z "$tarball" ]; then
+                continue
+            fi
             curl -L -H Pragma: -o "./$tarball" -R -S --fail --retry 5 --max-time 900 "$baseurl/$pkgname/$tarball/$md5sum/$tarball"
         done < sources
         md5sum -c sources
