@@ -29,7 +29,7 @@ if [[ -s sources ]]; then
         #   SHA512 (filename) = ABCDEF
         # We don't care about the equals sign. We also assume all hashes are
         # the same type, so we don't need to read it again for each line.
-        while read -r _ filename _ hash; do
+        while read -r _ filename _ hash || [[ -n "$filename" && -n "$hash" ]]; do
             if [ -z "$filename" ] || [ -z "$hash" ]; then
                 continue
             fi
@@ -41,7 +41,7 @@ if [[ -s sources ]]; then
         "${hashtype}sum" -c sources
     else
         # Ok, we're working with MD5.
-        while read -r md5sum tarball; do
+        while read -r md5sum tarball || [[ -n "$md5sum" && -n "$tarball" ]]; do
             if [ -z "$md5sum" ] || [ -z "$tarball" ]; then
                 continue
             fi
