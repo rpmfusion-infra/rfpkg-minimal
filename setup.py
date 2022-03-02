@@ -4,14 +4,14 @@ from setuptools import setup
 
 
 setup(
-    name="fedpkg-minimal",
+    name="rfpkg-minimal",
     version="1.2.0",
     author="Dennis Gilmore",
     author_email="dgilmore@fedoraproject.org",
-    description="Helper script for Fedora buildystem to fetch sources.",
+    description="Helper script for RPMFusion buildystem to fetch sources.",
     license="GPLv2+",
-    url="https://pagure.io/fedpkg-minimal",
-    scripts=["bin/fedpkg", "bin/fedpkg-stg", "bin/fedpkg-base"],
+    url="https://github.com/rpmfusion-infra/rfpkg-minimal",
+    scripts=["bin/rfpkg-minimal", "bin/rfpkg-base"],
     platforms="linux",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
